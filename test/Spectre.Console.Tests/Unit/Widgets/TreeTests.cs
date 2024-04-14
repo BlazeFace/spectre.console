@@ -35,6 +35,56 @@ public class TreeTests
     }
 
     [Fact]
+    public void Should_Full_Tree_Measure()
+    {
+        // Given
+        var console = new TestConsole();
+        var tree = new Tree(new Text("Root node")).Guide(TreeGuide.DoubleLine);
+        var nestedChildren = Enumerable.Range(0, 10).Select(x => new Text($"multiple\nline {x}"));
+        var child2 = new TreeNode(new Text("child2"));
+        var child2Child = new TreeNode(new Text("child2-1"));
+        child2.AddNode(child2Child);
+        child2Child.AddNode(new TreeNode(new Text("Child2-1-1\nchild")));
+        var child3 = new TreeNode(new Text("child3"));
+        var child3Child = new TreeNode(new Text("single leaf\nmultiline"));
+        child3Child.AddNode(new TreeNode(new Calendar(2021, 01)));
+        child3.AddNode(child3Child);
+
+        tree.AddNode("child1").AddNodes(nestedChildren);
+        tree.AddNode(child2);
+        tree.AddNode(child3);
+        tree.AddNode("child4");
+
+        // When
+        console.Write(tree);
+
+        // Then
+        var expected = "\u2551           \u2514\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2518"
+                .Length;
+        var actual = tree.Width;
+
+        actual.ShouldBe(expected);
+    }
+
+    [Fact]
+    public void Should_Empty_Tree_Measure()
+    {
+        // Given
+        var console = new TestConsole();
+        var tree = new Tree(new Text("Root node")).Guide(TreeGuide.DoubleLine);
+
+        // When
+        console.Write(tree);
+
+        // Then
+        var expected = "Root node"
+                .Length;
+        var actual = tree.Width;
+
+        actual.ShouldBe(expected);
+    }
+
+    [Fact]
     [Expectation("Render_NoChildren")]
     public Task Should_Render_Tree_With_No_Child_Nodes_Correctly()
     {

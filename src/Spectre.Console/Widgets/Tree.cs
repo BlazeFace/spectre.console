@@ -9,12 +9,17 @@ public sealed class Tree : Renderable, IHasTreeNodes
     private readonly TreeNode _root;
 
     /// <summary>
+    /// Gets Width of the tree.
+    /// </summary>
+    public int Width { get; private set; }
+
+    /// <summary>
     /// Gets or sets the tree style.
     /// </summary>
     public Style? Style { get; set; }
 
     /// <summary>
-    ///  Gets or sets the tree guide lines.
+    ///  Gets or sets the tree guidelines.
     /// </summary>
     public TreeGuide Guide { get; set; } = TreeGuide.Line;
 
@@ -89,13 +94,18 @@ public sealed class Tree : Renderable, IHasTreeNodes
             var prefix = levels.Skip(1).ToList();
             var renderableLines = Segment.SplitLines(current.Renderable.Render(options, maxWidth - Segment.CellCount(prefix)));
 
+            var maxLineLength = 0;
             foreach (var (_, isFirstLine, _, line) in renderableLines.Enumerate())
             {
+                var prefixLength = 0;
                 if (prefix.Count > 0)
                 {
+                    prefixLength = prefix.Sum(x => x.Text.Length);
                     result.AddRange(prefix.ToList());
                 }
 
+                var currentLineLength = line.Sum(x => x.Text.Length) + prefixLength;
+                maxLineLength = Math.Max(maxLineLength, currentLineLength);
                 result.AddRange(line);
                 result.Add(Segment.LineBreak);
 
@@ -106,16 +116,30 @@ public sealed class Tree : Renderable, IHasTreeNodes
                 }
             }
 
-            if (current.Expanded && current.Nodes.Count > 0)
+            if (current is { Expanded: true, Nodes.Count: > 0 })
             {
                 levels.AddOrReplaceLast(GetGuide(options, isLastChild ? TreeGuidePart.Space : TreeGuidePart.Continue));
                 levels.Add(GetGuide(options, current.Nodes.Count == 1 ? TreeGuidePart.End : TreeGuidePart.Fork));
 
                 stack.Push(new Queue<TreeNode>(current.Nodes));
             }
+
+            Width = Math.Max(Width, maxLineLength);
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Measures the tree.
+    /// </summary>
+    /// <param name="options">option.</param>
+    /// <param name="maxWidth">Max Width set.</param>
+    /// <returns>Measure.</returns>
+    protected override Measurement Measure(RenderOptions options, int maxWidth)
+    {
+        var width = Math.Min(Width, maxWidth);
+        return new Measurement(width, width);
     }
 
     private Segment GetGuide(RenderOptions options, TreeGuidePart part)
